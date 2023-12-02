@@ -1,6 +1,16 @@
-use std::{
-    collections::HashMap,
-    io::{self, Read, Write},
+use phf::phf_map;
+use std::io::{self, Read, Write};
+
+static NUMBERS: phf::Map<&'static str, u32> = phf_map! {
+        "two" => 2,
+        "one" => 1,
+        "three" => 3,
+        "four" => 4,
+        "five" => 5,
+        "six" => 6,
+        "seven" => 7,
+        "eight" => 8,
+        "nine" => 9
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -40,25 +50,14 @@ fn part1(input: &String) -> Result<()> {
 
 fn part2(input: &String) -> Result<u32> {
     // TODO: Move this out of the function. Make it static?
-    let numbers: HashMap<&str, u32> = HashMap::from([
-        ("one", 1),
-        ("two", 2),
-        ("three", 3),
-        ("four", 4),
-        ("five", 5),
-        ("six", 6),
-        ("seven", 7),
-        ("nine", 9),
-        ("eight", 8),
-    ]);
 
     let mut sum: u32 = 0;
     for line in input.lines() {
         let mut found_numbers: Vec<(usize, u32)> = Vec::new();
-        for number in numbers.keys() {
+        for number in NUMBERS.keys() {
             let mut found: Vec<(usize, u32)> = line
                 .match_indices(number)
-                .map(|(a, b)| (a, *numbers.get(b).unwrap()))
+                .map(|(a, b)| (a, *NUMBERS.get(b).unwrap()))
                 .collect();
             found_numbers.append(&mut found);
         }
