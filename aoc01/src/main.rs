@@ -2,8 +2,8 @@ use phf::phf_map;
 use std::io::{self, Read, Write};
 
 static NUMBERS: phf::Map<&'static str, u32> = phf_map! {
-        "two" => 2,
         "one" => 1,
+        "two" => 2,
         "three" => 3,
         "four" => 4,
         "five" => 5,
@@ -49,11 +49,12 @@ fn part1(input: &String) -> Result<()> {
 }
 
 fn part2(input: &String) -> Result<u32> {
-    // TODO: Move this out of the function. Make it static?
-
     let mut sum: u32 = 0;
+
     for line in input.lines() {
         let mut found_numbers: Vec<(usize, u32)> = Vec::new();
+
+        // Characters
         for number in NUMBERS.keys() {
             let mut found: Vec<(usize, u32)> = line
                 .match_indices(number)
@@ -61,14 +62,18 @@ fn part2(input: &String) -> Result<u32> {
                 .collect();
             found_numbers.append(&mut found);
         }
+
+        // Digits
         for (idx, c) in line.chars().enumerate() {
             if c.is_numeric() {
                 found_numbers.push((idx, c.to_digit(10).unwrap()))
             }
         }
+
         found_numbers.sort();
         sum += found_numbers[0].1 * 10 + found_numbers.last().unwrap().1;
     }
+
     writeln!(io::stdout(), "Sum: {}", sum)?;
     Ok(sum)
 }
