@@ -1,27 +1,41 @@
-use std::io::{self, Read, Write};
+use std::{
+    collections::HashMap,
+    io::{self, Read, Write},
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+struct Cubes {
+    color: String,
+    amount: u32,
+}
+
+type Games = HashMap<u32, Vec<Vec<Cubes>>>;
 
 fn main() -> Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    part1(&input)?;
-    part2(&input)?;
+    let games = parse_lines(&input).unwrap();
+
+    part1(&games)?;
+    part2(&games)?;
 
     Ok(())
 }
 
-fn part1(input: &String) -> Result<()> {
-    let mut sum = 0;
+fn parse_lines(input: &String) -> Result<Games> {
+    let mut games: Games = HashMap::new();
 
     for line in input.lines() {
-        let mut possible = true;
+        let mut sets_of_cubes: Vec<Vec<Cubes>> = Vec::new();
+
         let split = line.split(":").collect::<Vec<&str>>();
         let game = split[0];
         let records = split[1];
         let sets_of_games = records.split(";");
         for set in sets_of_games {
+            let mut set_of_cubes: Vec<Cubes> = Vec::new();
             let cubes_in_set = set.split(",");
             for cube_with_amount in cubes_in_set {
                 let amount: u32 = cube_with_amount
@@ -31,27 +45,43 @@ fn part1(input: &String) -> Result<()> {
                     .parse()
                     .unwrap();
                 let color = cube_with_amount.split_whitespace().next_back().unwrap();
-                let valid = match color {
-                    "red" => amount <= 12,
-                    "green" => amount <= 13,
-                    "blue" => amount <= 14,
-                    _ => panic!("Unexpected color"),
+                let cubes = Cubes {
+                    color: String::from(color),
+                    amount,
                 };
-                if valid == false {
-                    possible = false;
-                }
-                // writeln!(io::stdout(), "amount: {}", amount)?;
-                // writeln!(io::stdout(), "color: {}", color)?;
+                set_of_cubes.push(cubes);
             }
+            sets_of_cubes.push(set_of_cubes);
         }
-
         let game_id: u32 = game
             .split_whitespace()
             .next_back()
             .unwrap()
             .parse()
             .unwrap();
-        // writeln!(io::stdout(), "game_id: {}", game_id)?;
+        games.insert(game_id, sets_of_cubes);
+    }
+    Ok(games)
+}
+
+fn part1(games: &Games) -> Result<()> {
+    let mut sum = 0;
+
+    for (game_id, sets_of_cubes) in games {
+        let mut possible = true;
+        for set_of_cubes in sets_of_cubes {
+            for cube in set_of_cubes {
+                let valid = match cube.color.as_str() {
+                    "red" => cube.amount <= 12,
+                    "green" => cube.amount <= 13,
+                    "blue" => cube.amount <= 14,
+                    _ => panic!("Unexpected color"),
+                };
+                if valid == false {
+                    possible = false;
+                }
+            }
+        }
         if possible {
             sum += game_id;
         }
@@ -59,6 +89,7 @@ fn part1(input: &String) -> Result<()> {
     writeln!(io::stdout(), "sum: {}", sum)?;
     Ok(())
 }
-fn part2(input: &String) -> Result<()> {
+
+fn part2(games: &Games) -> Result<()> {
     Ok(())
 }
