@@ -1,4 +1,5 @@
 use std::{
+    cmp,
     collections::HashMap,
     io::{self, Read, Write},
 };
@@ -91,5 +92,24 @@ fn part1(games: &Games) -> Result<()> {
 }
 
 fn part2(games: &Games) -> Result<()> {
+    let mut sum = 0;
+
+    for (_, sets_of_cubes) in games {
+        let mut min_red = 0;
+        let mut min_green = 0;
+        let mut min_blue = 0;
+        for set_of_cubes in sets_of_cubes {
+            for cube in set_of_cubes {
+                match cube.color.as_str() {
+                    "red" => min_red = cmp::max(min_red, cube.amount),
+                    "green" => min_green = cmp::max(min_green, cube.amount),
+                    "blue" => min_blue = cmp::max(min_blue, cube.amount),
+                    _ => panic!("Unexpected color"),
+                };
+            }
+        }
+        sum += min_red * min_green * min_blue;
+    }
+    writeln!(io::stdout(), "sum: {}", sum)?;
     Ok(())
 }
