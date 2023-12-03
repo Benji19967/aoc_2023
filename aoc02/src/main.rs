@@ -6,8 +6,16 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+#[derive(Debug)]
+enum Color {
+    RED,
+    GREEN,
+    BLUE,
+}
+
+#[derive(Debug)]
 struct Cubes {
-    color: String,
+    color: Color,
     amount: u32,
 }
 
@@ -46,8 +54,14 @@ fn parse_lines(input: &String) -> Result<Games> {
                     .parse()
                     .unwrap();
                 let color = cube_with_amount.split_whitespace().next_back().unwrap();
+                let color_enum = match color {
+                    "red" => Color::RED,
+                    "green" => Color::GREEN,
+                    "blue" => Color::BLUE,
+                    _ => panic!("Unextpected color"),
+                };
                 let cubes = Cubes {
-                    color: String::from(color),
+                    color: color_enum,
                     amount,
                 };
                 set_of_cubes.push(cubes);
@@ -72,11 +86,10 @@ fn part1(games: &Games) -> Result<()> {
         let mut possible = true;
         for set_of_cubes in sets_of_cubes {
             for cube in set_of_cubes {
-                let valid = match cube.color.as_str() {
-                    "red" => cube.amount <= 12,
-                    "green" => cube.amount <= 13,
-                    "blue" => cube.amount <= 14,
-                    _ => panic!("Unexpected color"),
+                let valid = match cube.color {
+                    Color::RED => cube.amount <= 12,
+                    Color::GREEN => cube.amount <= 13,
+                    Color::BLUE => cube.amount <= 14,
                 };
                 if valid == false {
                     possible = false;
@@ -100,11 +113,10 @@ fn part2(games: &Games) -> Result<()> {
         let mut min_blue = 0;
         for set_of_cubes in sets_of_cubes {
             for cube in set_of_cubes {
-                match cube.color.as_str() {
-                    "red" => min_red = cmp::max(min_red, cube.amount),
-                    "green" => min_green = cmp::max(min_green, cube.amount),
-                    "blue" => min_blue = cmp::max(min_blue, cube.amount),
-                    _ => panic!("Unexpected color"),
+                match cube.color {
+                    Color::RED => min_red = cmp::max(min_red, cube.amount),
+                    Color::GREEN => min_green = cmp::max(min_green, cube.amount),
+                    Color::BLUE => min_blue = cmp::max(min_blue, cube.amount),
                 };
             }
         }
