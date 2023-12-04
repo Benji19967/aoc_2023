@@ -1,3 +1,4 @@
+use nom::character::complete::u32;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use nom::{bytes::complete::tag, IResult};
@@ -36,7 +37,31 @@ struct Cubes {
     amount: u32,
 }
 
+impl Cubes {
+    fn is_valid(&self) -> Result<bool> {
+        match self.color {
+            Color::RED => Ok(self.amount <= 12),
+            Color::BLUE => Ok(self.amount <= 14),
+            Color::GREEN => Ok(self.amount <= 13),
+        }
+    }
+}
+
 type Games = HashMap<u32, Vec<Vec<Cubes>>>;
+
+#[derive(Debug)]
+struct Game {
+    id: u32,
+    rounds: Vec<Vec<Cubes>>,
+}
+
+impl Game {
+    fn is_all_cubes_valid(&self) -> bool {
+        self.rounds
+            .iter()
+            .all(|round| round.iter().all(|cube| cube.is_valid().unwrap()))
+    }
+}
 
 fn main() -> Result<()> {
     let mut input = String::new();
@@ -51,11 +76,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn parse_lines_nom(input: &str) -> IResult<&str, Games> {
-    let mut games: Games = HashMap::new();
+fn parse_lines_nom(input: &str) -> IResult<&str, Vec<Game>> {
+    let mut games: Vec<Game> = Vec::new();
     for line in input.lines() {
-        let (_, (game_id, sets)) = parse_line_nom(line)?;
-        games.insert(game_id, sets);
+        let (_, (id, rounds)) = parse_line_nom(line)?;
+        games.push(Game { id, rounds });
     }
     Ok((input, games))
 }
@@ -135,40 +160,26 @@ fn parse_lines(input: &String) -> Result<Games> {
     Ok(games)
 }
 
-fn part1(games: &Games) -> Result<()> {
-    let mut sum = 0;
+fn part1(games: &Vec<Game>) -> Result<()> {
+    let sum = games
+        .iter()
+        .filter(|game| game.is_all_cubes_valid())
+        .map(|game| game.id)
+        .sum::<u32>();
 
-    for (game_id, sets_of_cubes) in games {
-        let mut possible = true;
-        for set_of_cubes in sets_of_cubes {
-            for cube in set_of_cubes {
-                let valid = match cube.color {
-                    Color::RED => cube.amount <= 12,
-                    Color::GREEN => cube.amount <= 13,
-                    Color::BLUE => cube.amount <= 14,
-                };
-                if valid == false {
-                    possible = false;
-                }
-            }
-        }
-        if possible {
-            sum += game_id;
-        }
-    }
     writeln!(io::stdout(), "sum: {}", sum)?;
     Ok(())
 }
 
-fn part2(games: &Games) -> Result<()> {
+fn part2(games: &Vec<Game>) -> Result<()> {
     let mut sum = 0;
 
-    for (_, sets_of_cubes) in games {
+    for game in games {
         let mut min_red = 0;
         let mut min_green = 0;
         let mut min_blue = 0;
-        for set_of_cubes in sets_of_cubes {
-            for cube in set_of_cubes {
+        for round in &game.rounds {
+            for cube in round {
                 match cube.color {
                     Color::RED => min_red = cmp::max(min_red, cube.amount),
                     Color::GREEN => min_green = cmp::max(min_green, cube.amount),
