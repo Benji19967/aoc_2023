@@ -1,3 +1,6 @@
+use nom::multi::separated_list1;
+use nom::{bytes::complete::tag, IResult};
+use std::str::FromStr;
 use std::{
     cmp,
     collections::HashMap,
@@ -13,6 +16,19 @@ enum Color {
     BLUE,
 }
 
+impl FromStr for Color {
+    type Err = Box<dyn std::error::Error>;
+
+    fn from_str(input: &str) -> Result<Color> {
+        match input {
+            "red" => Ok(Color::RED),
+            "green" => Ok(Color::GREEN),
+            "blue" => Ok(Color::BLUE),
+            _ => panic!("Unexpected color"),
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Cubes {
     color: Color,
@@ -25,12 +41,50 @@ fn main() -> Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    let games = parse_lines(&input).unwrap();
+    // let games = parse_lines(&input).unwrap();
+    let (_, games) = parse_lines_nom(&input).unwrap();
 
     part1(&games)?;
     part2(&games)?;
 
     Ok(())
+}
+
+fn cube_num_and_color(input: &str) -> IResult<&str, Cubes> {
+    let (input, _) = tag(" ")(input)?;
+    let (input, amount) = nom::character::complete::u32(input)?;
+    let (input, _) = tag(" ")(input)?;
+    let (input, color) = nom::character::complete::alpha1(input)?;
+    let color = Color::from_str(color).unwrap();
+
+    Ok((input, Cubes { color, amount }))
+}
+
+fn set_of_cubes(input: &str) -> IResult<&str, Vec<Cubes>> {
+    let (input, set) = separated_list1(tag(","), cube_num_and_color)(input)?;
+    Ok((input, set))
+}
+
+fn sets_of_cubes(input: &str) -> IResult<&str, Vec<Vec<Cubes>>> {
+    let (input, sets) = separated_list1(tag(";"), set_of_cubes)(input)?;
+    Ok((input, sets))
+}
+
+fn parse_line_nom(input: &str) -> IResult<&str, (u32, Vec<Vec<Cubes>>)> {
+    let (input, _) = tag("Game ")(input)?;
+    let (input, game_id) = nom::character::complete::u32(input)?;
+    let (input, _) = tag(":")(input)?;
+    let (input, sets) = sets_of_cubes(input)?;
+    Ok((input, (game_id, sets)))
+}
+
+fn parse_lines_nom(input: &str) -> IResult<&str, Games> {
+    let mut games: Games = HashMap::new();
+    for line in input.lines() {
+        let (_, (game_id, sets)) = parse_line_nom(line)?;
+        games.insert(game_id, sets);
+    }
+    Ok((input, games))
 }
 
 fn parse_lines(input: &String) -> Result<Games> {
