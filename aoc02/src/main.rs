@@ -1,4 +1,3 @@
-use nom::character::complete::u32;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use nom::{bytes::complete::tag, IResult};
@@ -46,8 +45,6 @@ impl Cubes {
         }
     }
 }
-
-type Games = HashMap<u32, Vec<Vec<Cubes>>>;
 
 #[derive(Debug)]
 struct Game {
@@ -114,8 +111,8 @@ fn cube_num_and_color(input: &str) -> IResult<&str, Cubes> {
     Ok((input, Cubes { color, amount }))
 }
 
-fn parse_lines(input: &String) -> Result<Games> {
-    let mut games: Games = HashMap::new();
+fn parse_lines(input: &String) -> Result<Vec<Game>> {
+    let mut games: Vec<Game> = Vec::new();
 
     for line in input.lines() {
         let mut sets_of_cubes: Vec<Vec<Cubes>> = Vec::new();
@@ -155,7 +152,10 @@ fn parse_lines(input: &String) -> Result<Games> {
             .unwrap()
             .parse()
             .unwrap();
-        games.insert(game_id, sets_of_cubes);
+        games.push(Game {
+            id: game_id,
+            rounds: sets_of_cubes,
+        });
     }
     Ok(games)
 }
