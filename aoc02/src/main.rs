@@ -1,4 +1,5 @@
 use nom::multi::separated_list1;
+use nom::sequence::separated_pair;
 use nom::{bytes::complete::tag, IResult};
 use std::str::FromStr;
 use std::{
@@ -50,24 +51,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn cube_num_and_color(input: &str) -> IResult<&str, Cubes> {
-    let (input, _) = tag(" ")(input)?;
-    let (input, amount) = nom::character::complete::u32(input)?;
-    let (input, _) = tag(" ")(input)?;
-    let (input, color) = nom::character::complete::alpha1(input)?;
-    let color = Color::from_str(color).unwrap();
-
-    Ok((input, Cubes { color, amount }))
-}
-
-fn set_of_cubes(input: &str) -> IResult<&str, Vec<Cubes>> {
-    let (input, set) = separated_list1(tag(","), cube_num_and_color)(input)?;
-    Ok((input, set))
-}
-
-fn sets_of_cubes(input: &str) -> IResult<&str, Vec<Vec<Cubes>>> {
-    let (input, sets) = separated_list1(tag(";"), set_of_cubes)(input)?;
-    Ok((input, sets))
+fn parse_lines_nom(input: &str) -> IResult<&str, Games> {
+    let mut games: Games = HashMap::new();
+    for line in input.lines() {
+        let (_, (game_id, sets)) = parse_line_nom(line)?;
+        games.insert(game_id, sets);
+    }
+    Ok((input, games))
 }
 
 fn parse_line_nom(input: &str) -> IResult<&str, (u32, Vec<Vec<Cubes>>)> {
@@ -78,13 +68,25 @@ fn parse_line_nom(input: &str) -> IResult<&str, (u32, Vec<Vec<Cubes>>)> {
     Ok((input, (game_id, sets)))
 }
 
-fn parse_lines_nom(input: &str) -> IResult<&str, Games> {
-    let mut games: Games = HashMap::new();
-    for line in input.lines() {
-        let (_, (game_id, sets)) = parse_line_nom(line)?;
-        games.insert(game_id, sets);
-    }
-    Ok((input, games))
+fn sets_of_cubes(input: &str) -> IResult<&str, Vec<Vec<Cubes>>> {
+    let (input, sets) = separated_list1(tag(";"), set_of_cubes)(input)?;
+    Ok((input, sets))
+}
+
+fn set_of_cubes(input: &str) -> IResult<&str, Vec<Cubes>> {
+    let (input, set) = separated_list1(tag(","), cube_num_and_color)(input)?;
+    Ok((input, set))
+}
+
+fn cube_num_and_color(input: &str) -> IResult<&str, Cubes> {
+    let (input, _) = tag(" ")(input)?;
+    let (input, (amount, color)) = separated_pair(
+        nom::character::complete::u32,
+        nom::character::complete::char(' '),
+        nom::character::complete::alpha1,
+    )(input)?;
+    let color = Color::from_str(color).unwrap();
+    Ok((input, Cubes { color, amount }))
 }
 
 fn parse_lines(input: &String) -> Result<Games> {
